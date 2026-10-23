@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#142b35">
+<title>KWS · Phone wake-word demo</title>
+<style>
+:root{font:16px/1.6 system-ui,-apple-system,sans-serif;color:#152e39;background:#f0f4f4;color-scheme:light}*{box-sizing:border-box}body{max-width:860px;margin:0 auto;padding:24px 18px 48px}h1{font-size:28px;line-height:1.2;margin:12px 0}h2{font-size:19px;margin:0 0 16px}.eyebrow{font-size:12px;letter-spacing:.14em;color:#53707b;font-weight:700}header{margin-bottom:24px}.muted{color:#58717b;font-size:14px}.card{background:#fff;border:1px solid #dce6e7;border-radius:18px;padding:22px;margin:16px 0}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.badge{font-size:12px;background:#e2eeeb;color:#276452;padding:5px 10px;border-radius:20px}label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}input,button{font:inherit;min-height:46px;border-radius:10px}input{width:100%;padding:10px 12px;border:1px solid #c5d6db;background:#fff;color:inherit}input[type=number]{width:180px;max-width:100%}button{border:0;background:#186d5a;color:white;padding:11px 18px;font-weight:600;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.secondary{background:#eaf0f1;color:#244953}.danger{background:#fff0ec;color:#a73824}.compact{min-height:36px;padding:5px 12px;font-size:13px}.controls{margin-top:18px}.pill{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:#58717b}.dot{width:8px;height:8px;background:#84999e;border-radius:50%}.active .dot{background:#19a67d;box-shadow:0 0 0 4px #19a67d19}#status{min-height:50px;padding:14px 16px;background:#eaf0f1;border-radius:12px;font-size:14px}#status.error{background:#fff0ec;color:#a73824}.meter{height:8px;background:#e7eded;overflow:hidden;border-radius:6px;margin:12px 0}#level{height:100%;width:0;background:#3b9984;transition:width .08s}.keyword{padding:14px 0;border-bottom:1px solid #edf1f2}.keyword:last-child{border:0}.keyword strong{overflow-wrap:anywhere}.keyword small{display:block;color:#58717b}.readout{display:grid;grid-template-columns:1fr auto;gap:8px;margin:16px 0}.score{font:600 36px/1.2 ui-monospace,monospace;letter-spacing:-.04em}#match{font-size:18px;min-height:30px;overflow-wrap:anywhere}#wake{padding:18px;background:#d4f4e6;color:#125b46;border:1px solid #96d8b7;border-radius:12px;margin:14px 0;font-weight:700}#wake[hidden]{display:none}.ranking{font-size:14px;color:#58717b}.event{border-top:1px solid #edf1f2;padding:10px 0;overflow-wrap:anywhere}#events{max-height:280px;overflow:auto}.note{font-size:13px;color:#6a7d84}audio{width:100%;margin-top:14px}details{font-size:14px;margin:14px 0}summary{cursor:pointer;font-weight:600}a{color:#186d5a}#error-detail{overflow-wrap:anywhere}@media(max-width:480px){body{padding:18px 14px 36px}.card{padding:18px}h1{font-size:25px}.controls button{flex:1}input[type=number]{width:100%}.score{font-size:32px}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">VOICE LAB / LOCAL CPU</div><div class="row between"><h1>Phone wake-word demo</h1><span class="badge" id="model">Loading model…</span></div><p class="muted">Record on your phone and match on your computer. No computer microphone or cloud speech service is needed.</p></header>
+<div id="status" role="status" aria-live="polite">Connecting to the computer…</div>
+<section class="card">
+<div class="row between"><h2>01 · Enroll a keyword</h2><span id="capture-state" class="pill"><span class="dot"></span><span id="capture-label">Microphone off</span></span></div>
+<p class="muted">Use three independent takes per keyword. Wait for “Start speaking”, say the phrase once, and recording will stop automatically.</p>
+<label for="keyword">Keyword label (a display name, not a transcription target)</label>
+<input id="keyword" maxlength="40" placeholder="Example: My wake phrase" autocomplete="off">
+<label for="microphone">Input microphone (choose a device after granting access)</label>
+<select id="microphone" style="font:inherit;max-width:100%;min-height:46px;width:100%"><option value="">System default microphone</option></select>
+<p class="note">If playback has no voice, disconnect Bluetooth/headsets or select another microphone and record again. Preparation-countdown audio is not enrolled.</p>
+<div class="row controls"><button id="enroll" disabled>Record enrollment</button><button id="stop" class="secondary" disabled>Stop microphone</button></div>
+<div class="meter" role="meter" aria-label="Microphone level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="level-meter"><div id="level"></div></div>
+<p id="capture-info" class="note">Audio is processed in memory; the computer stores enrollment vectors and labels only.</p>
+<p id="input-settings" class="note"></p>
+<audio id="playback" controls hidden aria-label="Replay the last enrollment recording"></audio>
+<p id="recording-info" class="note"></p>
+<a id="download-recording" download="kws-microphone-test.wav" hidden>Download the last raw recording for troubleshooting</a>
+<div id="keywords"><p class="muted">No enrolled keywords</p></div>
+<button id="clear" class="danger compact" disabled>Delete all templates</button>
+</section>
+<section class="card">
+<h2>02 · Continuous matching</h2>
+<p class="muted" id="window-info">Rolling-window matching requires a visible page and an unlocked phone. This is not a validated always-on wake-word engine.</p>
+<label for="threshold">Cosine similarity threshold (not a wake probability)</label>
+<input id="threshold" type="number" min="-1" max="1" step="0.01" value="0.5">
+<p class="note">The default is this model's offline validation threshold, used only as a starting point. Two consecutive hits are required, followed by cooldown and rearming.</p>
+<div class="row controls"><button id="listen" disabled>Start listening</button><button id="reset-threshold" class="secondary" disabled>Reset threshold</button></div>
+<div class="readout"><div><div class="muted">Closest keyword</div><div id="match">—</div></div><div class="score" id="score">—</div></div>
+<div id="ranking" class="ranking"></div>
+<div id="wake" role="alert" hidden></div>
+<p id="timing" class="note">Waiting for an audio window…</p>
+</section>
+<section class="card"><div class="row between"><h2>03 · Wake events on this page</h2><button id="clear-events" class="secondary compact">Clear events</button></div><div id="events"><p class="muted">No wake events yet</p></div></section>
+<details><summary>Connection and testing notes</summary><p>Use system Chrome or Safari and allow microphone access. LAN HTTP pages cannot use the live microphone API; trusted HTTPS is required. Avoid embedded in-app browsers.</p><p>Enroll up to five takes per keyword and multiple keywords. Templates are isolated by model, frontend, and window length. Re-enroll after changing weights. Reusing a label appends samples; it does not train or modify the model.</p><p>No speech recognizer or true VAD is included. Low-energy windows are skipped; noise, conversation, and similar-sounding phrases may still trigger. Thresholds and consecutive hits do not guarantee a false-alarm rate.</p><p id="model-detail" class="note"></p></details>
+<script type="module" src="/app.mjs"></script>
+</body>
+</html>

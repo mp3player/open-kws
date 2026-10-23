@@ -1,0 +1,126 @@
+{
+  "fingerprint": "e344c08d820881b7151d9a03c777bdd954538639f55b8980c010abe346a675f0",
+  "config": {
+    "seed": 42,
+    "min_samples": 5,
+    "min_sources": 3,
+    "min_zh_chars": 4,
+    "min_en_words": 2,
+    "validation_fraction": 0.05,
+    "test_fraction": 0.05,
+    "min_known_speakers": 2
+  },
+  "splits": {
+    "train": {
+      "classes": 97346,
+      "samples": 1558850
+    },
+    "validation": {
+      "classes": 5772,
+      "samples": 113747
+    },
+    "test": {
+      "classes": 6021,
+      "samples": 151051
+    }
+  },
+  "by_primary_source": [
+    {
+      "source": "fsc",
+      "split": 0,
+      "classes": 222,
+      "samples": 27181
+    },
+    {
+      "source": "fsc",
+      "split": 1,
+      "classes": 7,
+      "samples": 860
+    },
+    {
+      "source": "fsc",
+      "split": 2,
+      "classes": 13,
+      "samples": 1580
+    },
+    {
+      "source": "gigaphrase",
+      "split": 0,
+      "classes": 87524,
+      "samples": 1394523
+    },
+    {
+      "source": "gigaphrase",
+      "split": 1,
+      "classes": 5260,
+      "samples": 105785
+    },
+    {
+      "source": "gigaphrase",
+      "split": 2,
+      "classes": 5480,
+      "samples": 142163
+    },
+    {
+      "source": "slurp",
+      "split": 0,
+      "classes": 1427,
+      "samples": 10757
+    },
+    {
+      "source": "slurp",
+      "split": 1,
+      "classes": 59,
+      "samples": 422
+    },
+    {
+      "source": "slurp",
+      "split": 2,
+      "classes": 73,
+      "samples": 580
+    },
+    {
+      "source": "thchs30",
+      "split": 0,
+      "classes": 899,
+      "samples": 12010
+    },
+    {
+      "source": "thchs30",
+      "split": 1,
+      "classes": 49,
+      "samples": 658
+    },
+    {
+      "source": "thchs30",
+      "split": 2,
+      "classes": 52,
+      "samples": 720
+    },
+    {
+      "source": "wenetphrase",
+      "split": 0,
+      "classes": 7274,
+      "samples": 114379
+    },
+    {
+      "source": "wenetphrase",
+      "split": 1,
+      "classes": 397,
+      "samples": 6022
+    },
+    {
+      "source": "wenetphrase",
+      "split": 2,
+      "classes": 403,
+      "samples": 6008
+    }
+  ],
+  "counts": {
+    "input_rows": 6497281,
+    "short_text_rows": 3380161,
+    "source_overlap_rows_removed": 1207564,
+    "retained_rows": 1823648,
+    "class_filter_rows_removed": 85908
+  }
+}

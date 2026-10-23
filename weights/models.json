@@ -1,0 +1,26 @@
+{
+  "default_model": "cnn256",
+  "models": {
+    "cnn256": {
+      "checkpoint": "cnn_gelu_epoch11.pt",
+      "metadata": "model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 11
+    },
+    "gru96": {
+      "checkpoint": "gru96_softmax_epoch16.pt",
+      "metadata": "gru96_model_info.json",
+      "encoder_type": "gru",
+      "objective": "softmax",
+      "epoch": 16
+    },
+    "gru160": {
+      "checkpoint": "gru160_softmax_epoch24.pt",
+      "metadata": "gru160_model_info.json",
+      "encoder_type": "gru",
+      "objective": "softmax",
+      "epoch": 24
+    }
+  }
+}
