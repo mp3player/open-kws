@@ -1,6 +1,6 @@
 # Training procedure for the released checkpoints
 
-The main sections describe the completed GELU CNN experiment released as `weights/cnn256/epoch11.pt`. Section 8 documents the two GRU baselines; section 9 documents the completed ReLU CNN run and its separate best/last exports.
+The main sections describe the completed GELU CNN experiment released as `weights/cnn256/epoch11.pt`. Section 8 documents the two GRU baselines; section 9 documents the completed ReLU CNN256 run; section 10 documents CNN96 and its background fine-tune, each with best/last exports.
 
 Training code, classification heads, optimizer states, data-download scripts, training/evaluation audio, and ongoing experiments are not included. Each model folder under `weights/` contains its own `training_config.json`; these are records, not executable training scripts.
 
@@ -176,3 +176,32 @@ The training save rule is strict improvement in validation source-macro EER. Thi
 - `weights/cnn256_relu/last.pt`: encoder export from the final training checkpoint, epoch 30; no standardized test result is claimed for it yet.
 
 Both exports retain their own validation calibration and fingerprint and exclude classification heads and optimizer states. Complete training-resume checkpoints are not distributed through this inference repository. Older GRU and GELU exports remain unchanged.
+
+## 10. Completed CNN96 and background fine-tune
+
+CNN96 uses the same noncausal residual CNN structure, ReLU activations, six blocks, 64-D input projection, 128-D embedding, and attention/last-state pooling. Temporal stages use 48 and 96 channels instead of 128 and 256. The encoder has **408,049 parameters**, 1,632,196 raw FP32 parameter bytes, and approximately 20.1 million Conv/Linear MACs for a two-second, 197-frame input. MACs exclude the frontend, pooling, normalization, and runtime overhead; no MCU benchmark or quantization is provided.
+
+### Original CNN96: best epoch 16, last epoch 20
+
+- 20 full epochs, 8,125 steps per epoch, three GPUs, batch 64 per GPU / global batch 192; AMP disabled.
+- ArcFace margin 0.1, scale 30; CB beta 0.9999; AdamW lr=0.0003, weight decay 0.01; cosine schedule across 20 epochs.
+- Same 1,558,850 speech training examples, plus one background class with 1,002 clips: 1,000 synthetic clips and two nominal ESC-50 clips later audited as all-zero. Total training classes: 97,347; total recordings: 1,559,852. There was no effective real-background coverage in that preparation.
+- Voice waveform/feature augmentation is retained. Background-class examples bypass both waveform augmentation and SpecAugment. Frontend processing is unchanged; per-band temporal mean subtraction means simple volume reduction is not a reliable rejection signal.
+- Best is epoch 16 by minimum validation source-macro EER (2.256065%), not the final epoch 20 (2.257540%). Their validation TARs are 93.067% and 93.277%, respectively.
+- Exports: `weights/cnn96_relu/best.pt` and `last.pt`. See colocated metadata and sanitized training configuration. The original v2 background metrics are historical logs, not evidence of real-background rejection; the entry labeled `engine` was actually zero audio.
+
+This run changes width, margin, batch size, training duration, and the background class relative to CNN256; it is not an isolated width ablation.
+
+### Background fine-tune: best and last at additional epoch 3
+
+- Initialize encoder **and classification head** from original CNN96 epoch 20. Preserve class-label order, reset AdamW/scheduler/calibration, and run three additional full epochs at lr=0.00003 with full speech replay. Batch, architecture, margin, and scale stay unchanged.
+- Replace the background pool with 1,043 training clips: 43 real clips from 20 source recordings and 1,000 synthetic clips. Total training recordings: 1,559,893; classes remain 97,347.
+- Real audio is selected from ESC-50 rain, sea waves, wind, washing machine, vacuum cleaner, and engine categories. Keep original levels, resample to mono 16 kHz, and slice two-second clips at 1.5-second hops. Folds 1-3/4/5 define train/validation/test; independent source recordings do not cross splits.
+- Screen real clips before and after padding: RMS between -80 and -28 dBFS, peak at most -12 dBFS, 20 ms frame RMS at most -20 dBFS, frame rise at most 18 dB, strongest-three-adjacent-bin spectral energy fraction at most 0.65, and at least 20% active frames. These are heuristics, not VAD or calibrated sound pressure thresholds. Real all-zero audio is rejected; explicitly synthetic silence is separately marked.
+- Retain speech relative CB weights, but set the background class to 5% of nominal weighted sample mass, then renormalize. This does not guarantee 5% of loss or gradient contribution. No extra head, metric loss, or VAD is added.
+- Hold out 11 real validation clips / two sources and 14 real test clips / seven sources, plus 100 synthetic clips in each split. Held-out background is never enrolled or used to calibrate the speech threshold.
+- Best and last both select additional epoch 3 and contain identical encoder weights and calibration. They are saved separately as `weights/cnn96_relu_background/best.pt` and `last.pt`; epoch 3 is relative to initialization, not a three-epoch training-from-scratch claim.
+
+On the same new validation pool, original epoch 20 vs fine-tuned epoch 3 has speech macro EER 2.257540% vs 2.244099%, TAR 93.277% vs 93.067%, and real-background acceptance 4/11 vs 4/11. Aggregate non-speech acceptance including synthetic clips is 77.48% vs 87.39%, using separately speech-calibrated thresholds. These results do not establish improved background rejection; the background training-class accuracy of about 99.81% is not a cosine-rejection metric. No independent fixed-test evaluation is claimed for these exports.
+
+ESC-50 provenance, its recorded CC BY-NC 3.0 terms, and upstream review requirements are documented in [DATA_SOURCES.md](DATA_SOURCES.md). The classification head, optimizer state, audio, manifests, source paths, and personal recordings are excluded from all four inference exports.

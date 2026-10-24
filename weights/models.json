@@ -1,6 +1,38 @@
 {
   "default_model": "cnn256",
   "models": {
+    "cnn96-relu-best": {
+      "checkpoint": "cnn96_relu/best.pt",
+      "metadata": "cnn96_relu/best_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 16,
+      "checkpoint_kind": "best"
+    },
+    "cnn96-relu-last": {
+      "checkpoint": "cnn96_relu/last.pt",
+      "metadata": "cnn96_relu/last_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 20,
+      "checkpoint_kind": "last"
+    },
+    "cnn96-relu-background-best": {
+      "checkpoint": "cnn96_relu_background/best.pt",
+      "metadata": "cnn96_relu_background/best_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 3,
+      "checkpoint_kind": "best"
+    },
+    "cnn96-relu-background-last": {
+      "checkpoint": "cnn96_relu_background/last.pt",
+      "metadata": "cnn96_relu_background/last_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 3,
+      "checkpoint_kind": "last"
+    },
     "cnn256-relu-best": {
       "checkpoint": "cnn256_relu/best.pt",
       "metadata": "cnn256_relu/best_model_info.json",
