@@ -1,8 +1,8 @@
 # Training procedure for the released checkpoints
 
-The main sections describe the completed GELU CNN experiment released as `weights/cnn_gelu_epoch11.pt`. Section 8 documents the two GRU baselines; section 9 documents the completed ReLU CNN run and its separate best/last exports.
+The main sections describe the completed GELU CNN experiment released as `weights/cnn256/epoch11.pt`. Section 8 documents the two GRU baselines; section 9 documents the completed ReLU CNN run and its separate best/last exports.
 
-Training code, classification heads, optimizer states, data-download scripts, training/evaluation audio, and ongoing experiments are not included. Configurations are recorded in `training_config.json`, `training_config_gru160.json`, and `training_config_gru96.json`; these are records, not executable training scripts.
+Training code, classification heads, optimizer states, data-download scripts, training/evaluation audio, and ongoing experiments are not included. Each model folder under `weights/` contains its own `training_config.json`; these are records, not executable training scripts.
 
 ## 1. Task
 
@@ -122,7 +122,7 @@ Source-utterance groups are disjoint within the episode. Cross-speaker positive 
 
 Calibrate a threshold targeting 1% pair FAR on validation negative comparisons and freeze it for testing. Macro EER is the arithmetic mean of per-source EERs, not a per-content-class average.
 
-The CNN threshold is 0.3223716021. Recorded validation/test results are in README and `weights/model_info.json`.
+The CNN threshold is 0.3223716021. Recorded validation/test results are in README and `weights/cnn256/model_info.json`.
 
 This is not a fully reproducible training release and does not include fixed-episode audio. Offline pair FAR is not false alarms per hour; informal phone tests are not sufficient evidence of production reliability.
 
@@ -146,7 +146,7 @@ GRU96 has 136,513 encoder parameters; GRU160 has 317,505. Legacy configs without
 
 ### GRU160 + Softmax/CB, epoch 24
 
-- `gru160_softmax_epoch24.pt` is the best validation source-macro-EER snapshot of this run, not the later epoch-28 snapshot.
+- `weights/gru160/epoch24.pt` is the best validation source-macro-EER snapshot of this run, not the later epoch-28 snapshot.
 - 97,346 content classes; shuffled training recordings; three GPUs; batch 32 per GPU; 16,238 steps per full epoch.
 - Class-balanced ordinary Softmax CE, beta=0.9999; **no ArcFace margin**.
 - AdamW, lr=0.0003, weight_decay=0.01; originally 30 epochs; AMP off; seed=42.
@@ -155,7 +155,7 @@ GRU96 has 136,513 encoder parameters; GRU160 has 317,505. Legacy configs without
 
 ### GRU96 + Softmax, epoch 16
 
-- `gru96_softmax_epoch16.pt` is the early small-encoder run's best validation snapshot; epoch 17 was not its best.
+- `weights/gru96/epoch16.pt` is the early small-encoder run's best validation snapshot; epoch 17 was not its best.
 - Original batching config: classes_per_batch=16 and samples_per_class=2, with 2,000 fixed steps per epoch. This is not a full no-replacement traversal.
 - Ordinary Softmax classification. The legacy config has no CB weighting field; do not apply the later GRU160 recipe retroactively.
 - AdamW, lr=0.0003, weight_decay=0.01; originally 30 epochs; AMP off; seed=42.
@@ -168,11 +168,11 @@ Use separate enrollment templates and each model's own threshold.
 
 The ReLU run keeps the CNN's 256 channels, six residual blocks, 128-D output, attention pooling, normalization, ArcFace objective, CB weighting, full-data sampling, and augmentation recipe. Projection and temporal-convolution activations are ReLU instead of GELU. The encoder still has 2,659,649 parameters and 10,638,596 raw FP32 parameter bytes; this is an activation variant, not a smaller-parameter model.
 
-The completed run has 30 full epochs, 16,238 steps per epoch, 1,558,850 training utterances, global batch 96, ArcFace margin 0.2, scale 30, and CB beta 0.9999. Synthetic-noise augmentation is enabled; recorded background files remain zero. The sanitized saved configuration is `training_config_cnn_relu.json`.
+The completed run has 30 full epochs, 16,238 steps per epoch, 1,558,850 training utterances, global batch 96, ArcFace margin 0.2, scale 30, and CB beta 0.9999. Synthetic-noise augmentation is enabled; recorded background files remain zero. The sanitized saved configuration is `weights/cnn256_relu/training_config.json`.
 
 The training save rule is strict improvement in validation source-macro EER. This selects **epoch 26** (0.006524534300330631), whereas **epoch 30** has 0.006542148778072026. Both round to 0.0065 in the training log. Epoch-30 validation TAR is higher, so the two selection criteria must not be conflated.
 
-- `cnn_relu_best_epoch26.pt`: encoder export selected by validation macro EER; its frozen test episode has been evaluated.
-- `cnn_relu_last_epoch30.pt`: encoder export from the final training checkpoint; no standardized test result is claimed for it yet.
+- `weights/cnn256_relu/best.pt`: encoder export selected by validation macro EER, epoch 26; its frozen test episode has been evaluated.
+- `weights/cnn256_relu/last.pt`: encoder export from the final training checkpoint, epoch 30; no standardized test result is claimed for it yet.
 
 Both exports retain their own validation calibration and fingerprint and exclude classification heads and optimizer states. Complete training-resume checkpoints are not distributed through this inference repository. Older GRU and GELU exports remain unchanged.

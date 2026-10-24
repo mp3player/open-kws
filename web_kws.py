@@ -409,7 +409,7 @@ def lan_address():
             return "127.0.0.1"
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     models = parser.add_mutually_exclusive_group()
     models.add_argument("--model", choices=model_names(), help=f"Bundled model; default {DEFAULT_MODEL}")
@@ -425,7 +425,7 @@ def main():
     parser.add_argument("--min-rms", type=float, default=.002)
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--require-token", action="store_true", help="Opt into a random access token; default is trusted-LAN access")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     args.checkpoint = args.checkpoint or checkpoint_for(args.model or DEFAULT_MODEL)
     if not 1 <= args.port <= 65535 or not 1 <= args.setup_port <= 65535 or args.port == args.setup_port or args.threads < 1:
         parser.error("Invalid ports or thread count")

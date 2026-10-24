@@ -2,38 +2,38 @@
   "default_model": "cnn256",
   "models": {
     "cnn256-relu-best": {
-      "checkpoint": "cnn_relu_best_epoch26.pt",
-      "metadata": "cnn_relu_best_model_info.json",
+      "checkpoint": "cnn256_relu/best.pt",
+      "metadata": "cnn256_relu/best_model_info.json",
       "encoder_type": "cnn",
       "objective": "arcface",
       "epoch": 26,
       "checkpoint_kind": "best"
     },
     "cnn256-relu-last": {
-      "checkpoint": "cnn_relu_last_epoch30.pt",
-      "metadata": "cnn_relu_last_model_info.json",
+      "checkpoint": "cnn256_relu/last.pt",
+      "metadata": "cnn256_relu/last_model_info.json",
       "encoder_type": "cnn",
       "objective": "arcface",
       "epoch": 30,
       "checkpoint_kind": "last"
     },
     "cnn256": {
-      "checkpoint": "cnn_gelu_epoch11.pt",
-      "metadata": "model_info.json",
+      "checkpoint": "cnn256/epoch11.pt",
+      "metadata": "cnn256/model_info.json",
       "encoder_type": "cnn",
       "objective": "arcface",
       "epoch": 11
     },
     "gru96": {
-      "checkpoint": "gru96_softmax_epoch16.pt",
-      "metadata": "gru96_model_info.json",
+      "checkpoint": "gru96/epoch16.pt",
+      "metadata": "gru96/model_info.json",
       "encoder_type": "gru",
       "objective": "softmax",
       "epoch": 16
     },
     "gru160": {
-      "checkpoint": "gru160_softmax_epoch24.pt",
-      "metadata": "gru160_model_info.json",
+      "checkpoint": "gru160/epoch24.pt",
+      "metadata": "gru160/model_info.json",
       "encoder_type": "gru",
       "objective": "softmax",
       "epoch": 24

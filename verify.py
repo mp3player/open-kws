@@ -36,10 +36,10 @@ def verify_model(name):
                 scope="Synthetic wiring/regression check, not speech accuracy")
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=model_names(), help="Verify one model; default verifies all bundled models")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     names = (args.model,) if args.model else model_names()
     print(json.dumps([verify_model(name) for name in names], indent=2))
 

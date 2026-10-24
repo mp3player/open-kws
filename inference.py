@@ -101,27 +101,33 @@ def validate_label(label):
         raise ValueError("Keyword label must contain 1–40 characters without control characters")
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    models = parser.add_mutually_exclusive_group()
+def main(argv=None):
+    options = argparse.ArgumentParser(add_help=False, argument_default=argparse.SUPPRESS)
+    models = options.add_mutually_exclusive_group()
     models.add_argument("--model", choices=model_names(), help=f"Bundled model; default {DEFAULT_MODEL}")
     models.add_argument("--checkpoint", type=Path)
-    parser.add_argument("--threads", type=int, default=2)
+    options.add_argument("--threads", type=int)
+    parser = argparse.ArgumentParser(description=__doc__, parents=[options])
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("info")
-    compare = commands.add_parser("compare")
+    commands.add_parser("info", parents=[options])
+    compare = commands.add_parser("compare", parents=[options])
     compare.add_argument("reference", type=Path)
     compare.add_argument("query", type=Path)
     compare.add_argument("--threshold", type=float)
-    enroll = commands.add_parser("enroll")
+    enroll = commands.add_parser("enroll", parents=[options])
     enroll.add_argument("--keyword", required=True)
     enroll.add_argument("--audio", type=Path, nargs="+", required=True)
     enroll.add_argument("--templates", type=Path, default=Path("templates.json"))
-    match = commands.add_parser("match")
+    match = commands.add_parser("match", parents=[options])
     match.add_argument("--templates", type=Path, default=Path("templates.json"))
     match.add_argument("--audio", type=Path, nargs="+", required=True)
     match.add_argument("--threshold", type=float)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    args.model = getattr(args, "model", None)
+    args.checkpoint = getattr(args, "checkpoint", None)
+    args.threads = getattr(args, "threads", 2)
+    if args.model is not None and args.checkpoint is not None:
+        parser.error("Use either --model or --checkpoint, not both")
     try:
         encoder = KeywordEncoder(args.checkpoint or checkpoint_for(args.model or DEFAULT_MODEL), args.threads)
         if args.command == "info":
