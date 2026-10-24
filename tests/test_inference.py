@@ -8,7 +8,7 @@ import soundfile
 import torch
 
 from inference import KeywordEncoder
-from model_catalog import checkpoint_for, model_names
+from model_catalog import checkpoint_for, metadata_for, model_names
 from verify import verify_model
 from web_kws import ContentMatcher
 
@@ -80,7 +80,7 @@ class InferenceTests(unittest.TestCase):
     def test_all_bundled_models_and_cross_model_template_rejection(self):
         path = self.root / "templates.json"
         self.encoder.enroll(path, "\u6d4b\u8bd5\u8bcd", [self.audio])
-        self.assertEqual(set(model_names()), {"cnn256", "gru160", "gru96"})
+        self.assertEqual(set(model_names()), {"cnn256", "gru160", "gru96", "cnn256-relu-best", "cnn256-relu-last"})
         for name in model_names():
             with self.subTest(model=name):
                 self.assertTrue(verify_model(name)["verified"])
@@ -94,10 +94,22 @@ class InferenceTests(unittest.TestCase):
                 torch.testing.assert_close(web_vector, vector)
                 self.assertEqual(info["seconds"], 2)
                 self.assertEqual(matcher.state()["hop_seconds"], .1)
-                if name != "cnn256":
+                if name in {"gru96", "gru160"}:
                     self.assertEqual(encoder.encoder.encoder_type, "gru")
+                if name != "cnn256":
                     with self.assertRaisesRegex(ValueError, "another model"):
                         encoder.load_templates(path)
+
+    def test_relu_best_and_last_have_distinct_verified_identities(self):
+        best = json.loads(metadata_for("cnn256-relu-best").read_text(encoding="utf-8"))
+        last = json.loads(metadata_for("cnn256-relu-last").read_text(encoding="utf-8"))
+        self.assertEqual((best["epoch"], best["checkpoint_kind"]), (26, "best"))
+        self.assertEqual((last["epoch"], last["checkpoint_kind"]), (30, "last"))
+        self.assertEqual(best["encoder_config"], last["encoder_config"])
+        self.assertNotEqual(best["encoder_fingerprint"], last["encoder_fingerprint"])
+        self.assertLess(best["validation"]["macro_eer"], last["validation"]["macro_eer"])
+        self.assertIsNotNone(best["test"])
+        self.assertIsNone(last["test"])
 
 
 if __name__ == "__main__":

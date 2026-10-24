@@ -48,7 +48,7 @@ These observations do not establish a final license for the trained weights. The
 1. Confirm the inference code's authorship, ownership, notices, and chosen license. Training code is not included.
 2. Separately confirm weight redistribution, modification, and commercial-use conditions, obtaining upstream authorization where necessary. A new custom LICENSE cannot override upstream restrictions.
 3. For a version without these restrictions, consider obtaining permission or retraining on data licensed for the intended purpose, then evaluating the replacement model.
-4. Keep ongoing models and intermediate snapshots excluded. This directory pins GRU96 epoch 16, GRU160 epoch 24, and GELU CNN epoch 11 only.
+4. Keep ongoing models and unnecessary intermediate snapshots excluded. This directory pins GRU96 epoch 16, GRU160 epoch 24, GELU CNN epoch 11, and the now-completed ReLU CNN run's best epoch 26 and last epoch 30. The two ReLU exports contain no training head or optimizer state.
 5. Do not add personal recordings, per-recording transcripts, enrollment vectors, server paths, access tokens, training heads, or optimizer states.
 6. Exclude `.web_kws_tls/`, `recordings/`, `templates.json`, `.venv/`, and `__pycache__/`. The clean release contains no such runtime artifacts.
 7. Keep metrics and checksums accurate. Never relabel offline pair FAR as always-on false alarms per hour or claim MCU deployment has been validated.

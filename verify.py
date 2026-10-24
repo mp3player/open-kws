@@ -7,12 +7,16 @@ import numpy as np
 import torch
 
 from inference import KeywordEncoder
-from model_catalog import checkpoint_for, metadata_for, model_names
+from model_catalog import CATALOG, checkpoint_for, metadata_for, model_names
 
 
 def verify_model(name):
     checkpoint = checkpoint_for(name)
     metadata = json.loads(metadata_for(name).read_text(encoding="utf-8"))
+    if metadata["epoch"] != CATALOG["models"][name]["epoch"]:
+        raise ValueError("Checkpoint epoch does not match the model catalog")
+    if "checkpoint_kind" in CATALOG["models"][name] and metadata.get("checkpoint_kind") != CATALOG["models"][name]["checkpoint_kind"]:
+        raise ValueError("Checkpoint selection does not match the model catalog")
     digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
     if digest != metadata["sha256"]:
         raise ValueError("Checkpoint checksum failed")

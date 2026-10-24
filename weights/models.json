@@ -1,6 +1,22 @@
 {
   "default_model": "cnn256",
   "models": {
+    "cnn256-relu-best": {
+      "checkpoint": "cnn_relu_best_epoch26.pt",
+      "metadata": "cnn_relu_best_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 26,
+      "checkpoint_kind": "best"
+    },
+    "cnn256-relu-last": {
+      "checkpoint": "cnn_relu_last_epoch30.pt",
+      "metadata": "cnn_relu_last_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 30,
+      "checkpoint_kind": "last"
+    },
     "cnn256": {
       "checkpoint": "cnn_gelu_epoch11.pt",
       "metadata": "model_info.json",

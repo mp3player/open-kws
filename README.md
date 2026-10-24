@@ -1,6 +1,6 @@
 # User-defined keyword spotting with GRU/CNN content embeddings
 
-A standalone inference release containing three previously evaluated checkpoints: **GRU96, GRU160, and GELU CNN256**, with audio-file tests and a phone-microphone web demo.
+A standalone inference release containing **five fixed checkpoints**: GRU96, GRU160, GELU CNN256, and both the validation-best and final checkpoints of the completed ReLU CNN256 run. Audio-file tests and a phone-microphone web demo are included.
 
 Training code, training audio, personal recordings, enrollment templates, server addresses, private certificate keys, and models that are still being trained are **not included**. This directory runs independently of the parent project.
 
@@ -13,14 +13,18 @@ Training code, training audio, personal recordings, enrollment templates, server
 | `cnn256` (default) | Noncausal GELU CNN + ArcFace / CB | 11 | 2,659,649 | 0.322372 | Evaluated CNN baseline |
 | `gru160` | Two-layer unidirectional GRU160 + Softmax / CB | 24 | 317,505 | 0.333835 | Evaluated GRU baseline |
 | `gru96` | Two-layer unidirectional GRU96 + Softmax | 16 | 136,513 | 0.553505 | Early lightweight baseline; weaker validation results |
+| `cnn256-relu-best` | Noncausal ReLU CNN + ArcFace / CB | 26 | 2,659,649 | 0.284015 | Best validation source-macro EER of the completed run |
+| `cnn256-relu-last` | Same ReLU CNN configuration | 30 | 2,659,649 | 0.282165 | Final completed epoch; retained separately |
 
-One validation-selected checkpoint is included per configuration, not every epoch. Ongoing training snapshots and unsuccessful CTC, reconstruction, Transformer, and DS-CNN experiments are excluded.
+The three older baselines remain unchanged. The completed ReLU run includes both best and last, not every intermediate epoch. Ongoing training snapshots and unsuccessful CTC, reconstruction, Transformer, and DS-CNN experiments are excluded. The default remains `cnn256`; publishing new weights does not silently change the default model.
+
+`cnn_relu_best_epoch26.pt` was selected by minimum validation macro EER, while `cnn_relu_last_epoch30.pt` is the final epoch, with a slightly better validation TAR. They are distinct weights, with separate fingerprints and enrollment templates. Each contains only the encoder, frontend configuration, and calibration metadata, not the training head or optimizer state.
 
 The model catalog is `weights/models.json`. Each model has its own checksum, fingerprint, calibration threshold, and metadata.
 
 ## Training datasets
 
-All three models used the same filtered content-class index built from these **five corpus families**:
+All released configurations used the same filtered content-class index built from these **five corpus families**:
 
 | Dataset | Language | Retained training classes | Training recordings / segments |
 |---|---|---:|---:|
@@ -80,6 +84,8 @@ Provide your own WAV/FLAC files. Multichannel audio is averaged to mono and resa
 python inference.py compare enroll1.wav query.wav
 python inference.py --model gru160 compare enroll1.wav query.wav
 python inference.py --model gru96 info
+python inference.py --model cnn256-relu-best compare enroll1.wav query.wav
+python inference.py --model cnn256-relu-last info
 ```
 
 Enroll three independently recorded examples of one keyword:
@@ -105,6 +111,8 @@ Replace `YOUR_COMPUTER_LAN_IP` with the computer's IPv4 LAN address:
 ```bash
 python web_kws.py --address YOUR_COMPUTER_LAN_IP
 python web_kws.py --model gru160 --address YOUR_COMPUTER_LAN_IP
+python web_kws.py --model cnn256-relu-best --address YOUR_COMPUTER_LAN_IP
+python web_kws.py --model cnn256-relu-last --address YOUR_COMPUTER_LAN_IP
 ```
 
 1. Open the printed HTTP certificate setup URL on the phone (default port 8767).
@@ -156,10 +164,23 @@ Each model uses its own validation threshold. CNN is not better on every metric,
 
 GRU96 currently includes a verified validation report only: macro EER 4.621%, TAR 69.748%. Missing standardized test results are not invented. Detailed protocols and numbers are in `weights/model_info.json`, `weights/gru160_model_info.json`, and `weights/gru96_model_info.json`. Evaluation audio and per-recording episode files are not included.
 
+### Completed ReLU CNN run: best and last
+
+| Checkpoint | Validation macro EER | Validation TAR | Fixed-test global EER | Fixed-test macro EER | Fixed-test TAR | Test background accept rate |
+|---|---:|---:|---:|---:|---:|---:|
+| Best, epoch 26 | 0.652453% | 98.319% | 3.138% | 3.367% | 96.025% | 50.200% |
+| Last, epoch 30 | 0.654215% | 98.950% | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+
+Epoch 26 uses the same frozen test episode described above, with its own validation-only threshold; its test pair FAR is 1.005%. Compared with the deployed epoch-10 snapshot, test TAR increased from 91.213% to 96.025%, but background acceptance against 100 templates increased from 39.800% to 50.200%. This is not an unconditional improvement in rejection quality.
+
+Epoch 30 has only validation metrics and synthetic inference checks in this release. Do not treat epoch-26 test metrics as epoch-30 results. The tiny validation EER difference does not establish a meaningful real-world advantage for epoch 26.
+
+Metadata is recorded separately in `weights/cnn_relu_best_model_info.json` and `weights/cnn_relu_last_model_info.json`; the shared training recipe is in `training_config_cnn_relu.json`. ReLU does not reduce the 2,659,649 encoder parameters or the convolution MAC count relative to the GELU CNN.
+
 ## Files and regression tests
 
 ```text
-weights/               Three fixed checkpoints, model catalog, and metadata
+weights/               Five fixed checkpoints, model catalog, and metadata
 content_model.py       GRU/CNN encoders only; no training classification heads
 model_catalog.py       Local model selection
 audio.py               Training-compatible log-Mel frontend
