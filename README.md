@@ -37,13 +37,13 @@ The phone and computer must be on the same trusted LAN. If the detected address 
 python kws.py web --address YOUR_COMPUTER_LAN_IP
 ```
 
-To try the smaller 408k-parameter CNN96 (about 1.66 MB of FP32 inference weights):
+To try the smallest trained model, CNN48 (88,729 parameters, about 0.37 MB of FP32 inference weights):
 
 ```bash
-python kws.py web --model cnn96-relu-last
+python kws.py web --model cnn48-relu-best
 ```
 
-The default remains CNN256; the smaller model trades some validation accuracy for size. Register fresh templates when changing models.
+For the larger 408k-parameter CNN96 (about 1.65 MB), use `--model cnn96-relu-best`. The default remains CNN256. CNN48 trades substantial accuracy for size; see the recorded test results below. Register fresh templates when changing models. MCU real-time operation has not been validated.
 
 ### 3. Register and listen
 
@@ -101,6 +101,8 @@ python kws.py info --model gru160
 python kws.py compare enroll.wav query.wav --model cnn256-relu-last
 python kws.py web --model cnn96-relu-last
 python kws.py compare enroll.wav query.wav --model cnn96-relu-background-last
+python kws.py web --model cnn48-relu-best
+python kws.py compare enroll.wav query.wav --model cnn48-relu-last
 python kws.py verify
 ```
 
@@ -115,6 +117,8 @@ python kws.py verify
 | `cnn96-relu-last` | Same CNN96 configuration | 20 | 408,049 | 0.436371 |
 | `cnn96-relu-background-best` | CNN96 background fine-tune | 3 additional | 408,049 | 0.432430 |
 | `cnn96-relu-background-last` | Same fine-tune; identical encoder to best | 3 additional | 408,049 | 0.432430 |
+| `cnn48-relu-best` | Noncausal ReLU CNN48, four blocks + ArcFace / CB | 19 | 88,729 | 0.562056 |
+| `cnn48-relu-last` | Same CNN48 configuration | 20 | 88,729 | 0.562863 |
 | `gru160` | Two-layer unidirectional GRU160 + Softmax / CB | 24 | 317,505 | 0.333835 |
 | `gru96` | Two-layer unidirectional GRU96 + Softmax | 16 | 136,513 | 0.553505 |
 
@@ -147,6 +151,12 @@ weights/
     best_model_info.json
     last_model_info.json
     training_config.json
+  cnn48_relu/
+    best.pt                    Trained validation-best CNN48, epoch 19
+    last.pt                    Final trained CNN48, epoch 20
+    best_model_info.json
+    last_model_info.json
+    training_config.json
   gru160/
     epoch24.pt
     model_info.json
@@ -157,9 +167,9 @@ weights/
     training_config.json
 ```
 
-CNN256 ReLU and original CNN96 best/last are distinct weights, with separate fingerprints, thresholds, and enrollment templates. The background fine-tune's best and last select the same additional epoch 3, so their encoders and thresholds are identical. Best is selected by minimum validation source-macro EER, not maximum TAR. Only encoder/frontend/calibration assets are included, not classification heads or optimizer states. The default remains the evaluated GELU `cnn256` baseline.
+CNN256 ReLU, original CNN96, and CNN48 best/last are distinct trained weights, with separate fingerprints, thresholds, and enrollment templates. The background fine-tune's best and last select the same additional epoch 3, so their encoders and thresholds are identical. Best is selected by minimum validation source-macro EER, not maximum TAR. Only encoder/frontend/calibration assets are included, not classification heads or optimizer states. The default remains the evaluated GELU `cnn256` baseline.
 
-Updating from the earlier flat `weights/` layout? The original five model names and weight contents are unchanged; CNN96 adds four named exports. Use `--model NAME` instead of an old checkpoint path. Existing templates remain valid when you keep using the same model and audio configuration.
+Updating from the earlier flat `weights/` layout? The original five model names and weight contents are unchanged; CNN96 adds four named exports and CNN48 adds two. Use `--model NAME` instead of an old checkpoint path. Existing templates remain valid when you keep using the same model and audio configuration.
 
 ## Troubleshooting and options
 
@@ -197,13 +207,13 @@ Query audio      -> same encoder      -> cosine match against templates
 
 Training classifies **exact spoken content**, not intent or speaker identity. CNN uses ArcFace with class-balanced cross-entropy; GRU uses Softmax, with class balancing for GRU160. Inference needs no classification head, transcript, pinyin, or CTC. Registering a new phrase does not update model parameters. Multiple enrollment vectors are averaged and L2-normalized before matching.
 
-FP32 checkpoint sizes are approximately 10.17 MiB for CNN256, 1.58 MiB for CNN96, 1.22 MiB for GRU160, and 0.53 MiB for GRU96. ReLU replaces GELU activations but does not reduce parameter count or convolution MACs. CNN96 reduces channel width; it still uses LayerNorm, attention pooling, Tanh, and Softmax. Weight size is not runtime RAM usage.
+FP32 checkpoint sizes are approximately 10.17 MiB for CNN256, 1.58 MiB for CNN96, 0.35 MiB for CNN48, 1.22 MiB for GRU160, and 0.53 MiB for GRU96. ReLU replaces GELU activations but does not reduce parameter count or convolution MACs. CNN48 reduces both channel width and residual-block count; it still uses LayerNorm, attention pooling, Tanh, and Softmax. Weight size is not runtime RAM usage. CNN48 is a trained PyTorch inference export, not a random-weight timing fixture or an INT8/MCU-ready model.
 
 This is an experimental content-similarity release for PC CPU testing, **not** general ASR, speaker authentication, or a validated production always-on wake-word engine. Near-sounding phrases, unregistered speech, noise, and distribution shifts can cause false accepts or misses. Arbitrary Chinese phrases are not guaranteed to work reliably. No quantization, MCU export, or MCU hardware validation has been completed.
 
 ## Training datasets
 
-All released configurations share the speech pool built from **five corpus families** below. CNN96 additionally uses one background training class; its background counts are separate from this speech-only table.
+All released configurations share the speech pool built from **five corpus families** below. CNN96 and CNN48 additionally use one background training class; their background counts are separate from this speech-only table.
 
 | Dataset | Language | Retained training classes | Training recordings / segments |
 |---|---|---:|---:|
@@ -217,6 +227,8 @@ All released configurations share the speech pool built from **five corpus famil
 Counts describe the filtered training index, **not original dataset sizes**. Classes are attributed to their primary source. The mixture is dominated by English GigaPhrase data and is not language-balanced. GigaPhrase includes material derived from LibriSpeech/GigaSpeech; those are upstream sources, not additional independently prepared datasets.
 
 CNN96's original run adds 1,002 training background clips, mostly synthetic white/pink noise and silence. The two nominal ESC-50 training clips and one validation clip were later found to be entirely zero: they are not effective real-background coverage. The background fine-tune replaces that background pool with 1,043 training clips (43 real clips from 20 sources plus 1,000 synthetic clips). Real audio comes from selected [ESC-50](https://github.com/karolpiczak/ESC-50) categories via [ashraq/esc50](https://huggingface.co/datasets/ashraq/esc50); the recorded upstream license is CC BY-NC 3.0. This does not grant commercial use or establish weight-redistribution clearance. See [DATA_SOURCES.md](DATA_SOURCES.md).
+
+CNN48 is trained from scratch on the five-corpus speech pool plus that corrected 1,043-clip background pool, not initialized from CNN96. All classes use ordinary CB weighting; it does not use the background fine-tune's 5% nominal weighted-mass setting. Training has 97,347 classes and 1,559,893 examples, with speech augmentation retained.
 
 Validation contains 5,772 content classes / 113,747 segments; test contains 6,021 classes / 151,051 segments. These are available pools, not evaluation trial counts.
 
@@ -233,8 +245,11 @@ Existing fixed-episode results use 100 enrolled classes with one recording each,
 | CNN256 ReLU best, epoch 26 | 3.138% | 3.367% | 96.025% | 1.005% | 50.200% |
 | CNN256 ReLU last, epoch 30 | Not evaluated | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
 | GRU96, epoch 16 | Not evaluated | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
-| CNN96 ReLU best / last | Not evaluated | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+| CNN96 ReLU best, epoch 16 | 5.021% | 5.384% | 87.029% | 0.985% | 42.600% |
+| CNN96 ReLU last, epoch 20 | Not evaluated | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
 | CNN96 background fine-tune best / last | Not evaluated | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+| CNN48 ReLU best, epoch 19 | 7.693% | 7.648% | 71.967% | 0.936% | 35.800% |
+| CNN48 ReLU last, epoch 20 | Not evaluated | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
 
 | Model | Validation source-macro EER | Validation TAR |
 |---|---:|---:|
@@ -246,14 +261,18 @@ Existing fixed-episode results use 100 enrolled classes with one recording each,
 | CNN96 ReLU best, epoch 16 | 2.256065% | 93.067% |
 | CNN96 ReLU last, epoch 20 | 2.257540% | 93.277% |
 | CNN96 background fine-tune best / last, additional epoch 3 | 2.244099% | 93.067% |
+| CNN48 ReLU best, epoch 19 | 5.218730% | 73.529% |
+| CNN48 ReLU last, epoch 20 | 5.329304% | 73.319% |
 
-The CNN96 background fine-tune did **not** demonstrate improved background rejection. On the same v3 validation pool, the original epoch-20 model accepted 4/11 real background clips and the fine-tuned model also accepted 4/11. Including synthetic noise/silence, acceptance changed from 77.48% to 87.39%; thresholds were independently calibrated on speech validation (0.436371 vs 0.432430). These are comparisons against 100 speech templates without an energy gate, not always-on false alarms/hour. The real-background validation set has only two independent source recordings. Original v2 and new v3 background pools must not be compared as identical episodes. No independent fixed-test result is claimed for the CNN96 exports.
+The CNN96 background fine-tune did **not** demonstrate improved background rejection. On the same v3 validation pool, the original epoch-20 model accepted 4/11 real background clips and the fine-tuned model also accepted 4/11. Including synthetic noise/silence, acceptance changed from 77.48% to 87.39%; thresholds were independently calibrated on speech validation (0.436371 vs 0.432430). These are comparisons against 100 speech templates without an energy gate, not always-on false alarms/hour. The real-background validation set has only two independent source recordings. Original v2 and new v3 background pools must not be compared as identical episodes. Only the original CNN96 best has a fixed-test result above; its last and fine-tuned exports remain unevaluated on that test episode.
+
+CNN48 best and original CNN96 best were compared on identical historical test records, verified against the corrected index, with unchanged audio preprocessing and each model's own frozen validation threshold. CNN48 reduces Conv/Linear MACs from approximately 20.10M to 4.49M per two-second input, but test TAR drops from 87.03% to 71.97%; lower background acceptance is not an unconditional improvement. Both accepted 6/14 real held-out background clips (seven independent source recordings), or 67/114 including synthetic noise/silence, against 100 speech templates with no energy gate. Their training background pools, widths, and depths differ, so this is not a single-factor ablation. These results do not establish reliable continuous listening or MCU real-time capability. Best-epoch test results must not be attributed to the last checkpoint.
 
 EER scans thresholds; TAR uses the fixed validation threshold. Macro EER averages per-source EERs, not per-class EERs. **Pair FAR is not false alarms per hour.** Background acceptance means an unregistered-content query is accepted by any of 100 templates, not ambient-silence false alarms. These high background acceptance rates show that open-set rejection remains insufficient for production claims.
 
 CNN is not better than GRU on every metric. Architecture, objective, and augmentation changed together, so this is not an isolated architecture ablation. ReLU epoch 26 improves test TAR over the earlier epoch-10 snapshot (91.213% to 96.025%), but background acceptance increases (39.800% to 50.200%); this is not an unconditional improvement.
 
-Both ReLU validation EERs round to 0.0065 in training logs. Epoch 26 has slightly lower EER; epoch 30 has higher TAR. Their tiny EER difference does not establish a meaningful real-world advantage. Epoch-26 test metrics must not be attributed to epoch 30. Detailed protocols, calibration, checksums, and synthetic references are stored beside each model.
+Both CNN256 ReLU validation EERs round to 0.0065 in training logs. Epoch 26 has slightly lower EER; epoch 30 has higher TAR. Their tiny EER difference does not establish a meaningful real-world advantage. Epoch-26 test metrics must not be attributed to epoch 30. Detailed protocols, calibration, checksums, and synthetic references are stored beside each model.
 
 ## Licensing and development
 

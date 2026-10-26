@@ -82,7 +82,8 @@ class InferenceTests(unittest.TestCase):
         self.encoder.enroll(path, "\u6d4b\u8bd5\u8bcd", [self.audio])
         self.assertEqual(set(model_names()), {"cnn256", "gru160", "gru96", "cnn256-relu-best", "cnn256-relu-last",
                                              "cnn96-relu-best", "cnn96-relu-last",
-                                             "cnn96-relu-background-best", "cnn96-relu-background-last"})
+                                             "cnn96-relu-background-best", "cnn96-relu-background-last",
+                                             "cnn48-relu-best", "cnn48-relu-last"})
         for name in model_names():
             with self.subTest(model=name):
                 self.assertTrue(verify_model(name)["verified"])
@@ -123,7 +124,10 @@ class InferenceTests(unittest.TestCase):
                 self.assertEqual((metadata["epoch"], metadata["checkpoint_kind"]), selection)
                 self.assertEqual(metadata["parameters"], 408049)
                 self.assertLess(metadata["checkpoint_bytes"], 2_000_000)
-                self.assertIsNone(metadata["test"])
+                if name == "cnn96-relu-best":
+                    self.assertIsNotNone(metadata["test"])
+                else:
+                    self.assertIsNone(metadata["test"])
                 payload = torch.load(checkpoint_for(name), map_location="cpu", weights_only=True)
                 self.assertEqual(set(payload), {"format_version", "encoder_config", "encoder_state",
                                                 "dataset_fingerprint", "audio_config", "seed", "calibration"})
@@ -156,6 +160,62 @@ class InferenceTests(unittest.TestCase):
                 self.assertNotIn(key, config)
             self.assertNotIn("/data/", json.dumps(config))
             self.assertNotIn("/root/", json.dumps(config))
+
+    def test_trained_cnn48_best_and_last_are_small_and_distinct(self):
+        fingerprints = []
+        for kind, epoch in (("best", 19), ("last", 20)):
+            name = f"cnn48-relu-{kind}"
+            metadata = json.loads(metadata_for(name).read_text(encoding="utf-8"))
+            self.assertEqual((metadata["epoch"], metadata["checkpoint_kind"]), (epoch, kind))
+            self.assertTrue(metadata["trained"])
+            self.assertFalse(metadata["quantized"])
+            self.assertEqual(metadata["parameters"], 88729)
+            self.assertEqual(metadata["fp32_parameter_bytes"], 354916)
+            self.assertEqual(metadata["conv_linear_macs_per_197_frames"], 4486528)
+            self.assertLess(metadata["checkpoint_bytes"], 500_000)
+            payload = torch.load(checkpoint_for(name), map_location="cpu", weights_only=True)
+            self.assertEqual(set(payload), {"format_version", "encoder_config", "encoder_state",
+                                            "dataset_fingerprint", "audio_config", "seed", "calibration"})
+            self.assertEqual(payload["encoder_config"]["cnn_channels"], 48)
+            self.assertEqual(payload["encoder_config"]["cnn_blocks"], 4)
+            self.assertEqual(payload["encoder_config"]["cnn_activation"], "relu")
+            self.assertEqual(payload["calibration"], metadata["validation"])
+            fingerprints.append(metadata["encoder_fingerprint"])
+        self.assertNotEqual(*fingerprints)
+        configuration = json.loads((checkpoint_for("cnn48-relu-best").parent / "training_config.json").read_text())
+        self.assertEqual(configuration["released_checkpoints"], {"best": 19, "last": 20})
+        self.assertEqual(configuration["training_classes"], 97347)
+        self.assertEqual(configuration["training_utterances"], 1559893)
+        self.assertEqual(configuration["class_weighting"], "cb")
+        self.assertIsNone(configuration["background_loss_share"])
+        self.assertIsNone(configuration["initialization"])
+        self.assertEqual(configuration["background_data"]["provenance"]["real_background"]["clips"]["train"], 43)
+        for key in ("index", "output_dir", "resume", "init_from", "init_index"):
+            self.assertNotIn(key, configuration)
+        self.assertNotIn("/data/", json.dumps(configuration))
+        self.assertNotIn("/root/", json.dumps(configuration))
+
+    def test_cnn48_and_cnn96_best_share_frozen_test_without_claiming_last_results(self):
+        metadata = {name: json.loads(metadata_for(name).read_text(encoding="utf-8"))
+                    for name in ("cnn48-relu-best", "cnn48-relu-last", "cnn96-relu-best")}
+        small = metadata["cnn48-relu-best"]["test"]
+        baseline = metadata["cnn96-relu-best"]["test"]
+        self.assertIsNone(metadata["cnn48-relu-last"]["test"])
+        self.assertEqual(small["test_trials_sha256"], baseline["test_trials_sha256"])
+        self.assertEqual(small["dataset_fingerprint"], baseline["dataset_fingerprint"])
+        self.assertEqual(small["protocol"], baseline["protocol"])
+        self.assertLess(small["tar"], baseline["tar"])
+        for name in ("cnn48-relu-best", "cnn96-relu-best"):
+            record = metadata[name]
+            test = record["test"]
+            self.assertEqual((test["positive_trials"], test["negative_trials"]), (478, 97322))
+            self.assertEqual(test["threshold_source"], "validation")
+            self.assertEqual(test["threshold"], record["validation"]["threshold"])
+            self.assertEqual(test["encoder_fingerprint"], record["encoder_fingerprint"])
+            self.assertEqual(test["training_dataset_fingerprint"], record["dataset_fingerprint"])
+            self.assertEqual(test["non_speech"]["real_background"],
+                             {"queries": 14, "source_groups": 7, "accepted": 6, "accept_rate": 6 / 14})
+            self.assertNotIn("production_frontend_verification", test)
 
 
 if __name__ == "__main__":

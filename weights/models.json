@@ -1,6 +1,22 @@
 {
   "default_model": "cnn256",
   "models": {
+    "cnn48-relu-best": {
+      "checkpoint": "cnn48_relu/best.pt",
+      "metadata": "cnn48_relu/best_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 19,
+      "checkpoint_kind": "best"
+    },
+    "cnn48-relu-last": {
+      "checkpoint": "cnn48_relu/last.pt",
+      "metadata": "cnn48_relu/last_model_info.json",
+      "encoder_type": "cnn",
+      "objective": "arcface",
+      "epoch": 20,
+      "checkpoint_kind": "last"
+    },
     "cnn96-relu-best": {
       "checkpoint": "cnn96_relu/best.pt",
       "metadata": "cnn96_relu/best_model_info.json",

@@ -1,6 +1,6 @@
 # Dataset provenance, licensing, and release checklist
 
-As of 2026-10-24, this directory is a **release draft** for maintainer review. No code or weight license has been selected; no MIT, Apache-2.0, commercial-use, or redistribution permission is granted here.
+As of 2026-10-26, this directory is a **release draft** for maintainer review. No code or weight license has been selected; no MIT, Apache-2.0, commercial-use, or redistribution permission is granted here.
 
 Publishing only weights does not remove the need to review upstream dataset terms. The conditions for distributing and using trained weights still require maintainer verification and, where necessary, confirmation from the rights holders.
 
@@ -35,11 +35,11 @@ Counts are after content-length, sample-count, source-group, and known-speaker f
 
 ## Identified restrictions
 
-### Additional CNN96 background data: ESC-50 and synthetic noise
+### Additional CNN96 / CNN48 background data: ESC-50 and synthetic noise
 
-The CNN96 variants use the same five-corpus speech pool plus a single background class. The original 20-epoch run had 1,000 synthetic training clips (white noise, pink noise, and silence) and two nominal ESC-50 clips. Both nominal training clips and one nominal validation clip were audited as entirely zero; they must not be counted as effective real-background coverage. The original category-ID mapping was also incorrect. Historical v2 metadata is retained with an explicit audit warning, not endorsed as correct category selection.
+The CNN96 and CNN48 variants use the same five-corpus speech pool plus a single background class. The original CNN96 20-epoch run had 1,000 synthetic training clips (white noise, pink noise, and silence) and two nominal ESC-50 clips. Both nominal training clips and one nominal validation clip were audited as entirely zero; they must not be counted as effective real-background coverage. The original category-ID mapping was also incorrect. Historical v2 metadata is retained with an explicit audit warning, not endorsed as correct category selection.
 
-The completed three-epoch background fine-tune used selected nonzero clips from [ESC-50 upstream](https://github.com/karolpiczak/ESC-50), obtained through [ashraq/esc50](https://huggingface.co/datasets/ashraq/esc50) at revision `e3e2a63ffff66b9a9735524551e3818e96af03ee`. Candidate category names are rain, sea waves, wind, washing machine, vacuum cleaner, and engine. Selection keeps original levels and applies energy/activity/transient/tonality checks; it does not attenuate loud effects into background examples. These checks do not guarantee the absence of incidental speech.
+The completed three-epoch CNN96 background fine-tune and the CNN48 trained-from-scratch run used the same corrected pool of selected nonzero clips from [ESC-50 upstream](https://github.com/karolpiczak/ESC-50), obtained through [ashraq/esc50](https://huggingface.co/datasets/ashraq/esc50) at revision `e3e2a63ffff66b9a9735524551e3818e96af03ee`. Candidate category names are rain, sea waves, wind, washing machine, vacuum cleaner, and engine. Selection keeps original levels and applies energy/activity/transient/tonality checks; it does not attenuate loud effects into background examples. These checks do not guarantee the absence of incidental speech. CNN48 uses ordinary CB weighting, not the CNN96 fine-tune's special 5% nominal background weighted-mass setting.
 
 | Split | Real clips / independent source recordings | Synthetic clips |
 |---|---:|---:|
@@ -47,9 +47,9 @@ The completed three-epoch background fine-tune used selected nonzero clips from 
 | Validation | 11 / 2 | 100 |
 | Test | 14 / 7 | 100 |
 
-Source-disjoint folds 1-3/4/5 define the background splits. Multiple windows from one source are not independent recordings. Only training clips enter the additional class; held-out background is neither enrolled as a keyword nor used for speech-threshold calibration. The test pool was prepared, but no independent fixed-test evaluation is claimed here.
+Source-disjoint folds 1-3/4/5 define the background splits. Multiple windows from one source are not independent recordings. Only training clips enter the additional class; held-out background is neither enrolled as a keyword nor used for speech-threshold calibration. Original CNN96 best and CNN48 best have now been evaluated on the same frozen speech episode and corrected held-out background pool; their last checkpoints and the fine-tuned CNN96 exports do not have such a test claim. Aggregate results and limitations are recorded beside the corresponding best weights, without audio or per-recording transcripts.
 
-The recorded ESC-50 terms are **CC BY-NC 3.0**; preserve upstream clip attribution and review the upstream license and derived-weight distribution conditions. No audio is distributed here. This additional provenance does not resolve the existing speech-corpus restrictions or grant commercial rights. The sanitized `background_data` in each CNN96 training configuration records the dataset revision, manifest hash, policy, counts, and limitations without private paths.
+The recorded ESC-50 terms are **CC BY-NC 3.0**; preserve upstream clip attribution and review the upstream license and derived-weight distribution conditions. No audio is distributed here. This additional provenance does not resolve the existing speech-corpus restrictions or grant commercial rights. The sanitized `background_data` in each CNN96 / CNN48 training configuration records the dataset revision, manifest hash, policy, counts, and limitations without private paths.
 
 ### Speech-corpus restrictions
 
@@ -66,7 +66,7 @@ These observations do not establish a final license for the trained weights. The
 1. Confirm the inference code's authorship, ownership, notices, and chosen license. Training code is not included.
 2. Separately confirm weight redistribution, modification, and commercial-use conditions, obtaining upstream authorization where necessary. A new custom LICENSE cannot override upstream restrictions.
 3. For a version without these restrictions, consider obtaining permission or retraining on data licensed for the intended purpose, then evaluating the replacement model.
-4. Keep ongoing models and unnecessary intermediate snapshots excluded. This directory pins GRU96 epoch 16, GRU160 epoch 24, GELU CNN epoch 11, ReLU CNN256 best epoch 26 / last epoch 30, CNN96 best epoch 16 / last epoch 20, and the completed background fine-tune's best / last at additional epoch 3. All are encoder-only inference exports without training heads or optimizer states.
+4. Keep ongoing models and unnecessary intermediate snapshots excluded. This directory pins GRU96 epoch 16, GRU160 epoch 24, GELU CNN epoch 11, ReLU CNN256 best epoch 26 / last epoch 30, CNN96 best epoch 16 / last epoch 20, the completed background fine-tune's best / last at additional epoch 3, and trained CNN48 best epoch 19 / last epoch 20. All are encoder-only inference exports without training heads or optimizer states. Random-weight hardware timing fixtures are not included.
 5. Do not add personal recordings, per-recording transcripts, enrollment vectors, server paths, access tokens, training heads, or optimizer states.
 6. Exclude `.web_kws_tls/`, `recordings/`, `templates.json`, `.venv/`, and `__pycache__/`. The clean release contains no such runtime artifacts.
 7. Keep metrics and checksums accurate. Never relabel offline pair FAR as always-on false alarms per hour or claim MCU deployment has been validated.

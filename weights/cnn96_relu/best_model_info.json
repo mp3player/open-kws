@@ -137,8 +137,135 @@
       "scope": "Held-out non-speech clips against speech templates; no RMS gate, no noise enrollment, not false alarms/hour"
     }
   },
-  "test": null,
-  "test_status": "No independent fixed-test evaluation claimed for this export",
+  "test": {
+    "eer": 0.05020684044227424,
+    "threshold": 0.4419020712375641,
+    "target_pair_far": 0.01,
+    "pair_far": 0.009853887096442736,
+    "tar": 0.8702928870292888,
+    "positive_trials": 478,
+    "negative_trials": 97322,
+    "top1": 0.866108775138855,
+    "background_queries": 500,
+    "background_accept_rate": 0.4259999990463257,
+    "threshold_source": "validation",
+    "by_source": {
+      "fsc": {
+        "eer": 0.090986790986791,
+        "threshold": 0.4419020712375641,
+        "target_pair_far": 0.01,
+        "pair_far": 0.019114219114219115,
+        "tar": 0.8615384615384616,
+        "positive_trials": 65,
+        "negative_trials": 6435
+      },
+      "gigaphrase": {
+        "eer": 0.025714174666718465,
+        "threshold": 0.4419020712375641,
+        "target_pair_far": 0.01,
+        "pair_far": 0.0018383924754168449,
+        "tar": 0.9363636363636364,
+        "positive_trials": 110,
+        "negative_trials": 23390
+      },
+      "slurp": {
+        "eer": 0.06314708249738703,
+        "threshold": 0.4419020712375641,
+        "target_pair_far": 0.01,
+        "pair_far": 0.023419310659666744,
+        "tar": 0.8421052631578947,
+        "positive_trials": 95,
+        "negative_trials": 21905
+      },
+      "thchs30": {
+        "eer": 0.017919468304248128,
+        "threshold": 0.4419020712375641,
+        "target_pair_far": 0.01,
+        "pair_far": 0.009491235570756734,
+        "tar": 0.9727272727272728,
+        "positive_trials": 110,
+        "negative_trials": 23390
+      },
+      "wenetphrase": {
+        "eer": 0.07143178864194988,
+        "threshold": 0.4419020712375641,
+        "target_pair_far": 0.01,
+        "pair_far": 0.002612377263309612,
+        "tar": 0.7142857142857143,
+        "positive_trials": 98,
+        "negative_trials": 22202
+      }
+    },
+    "macro_eer": 0.0538398610194189,
+    "dataset_fingerprint": "953885045fd11495c3f3a56a7bfc6c7c55686d91497f922722b198ef5a454d83",
+    "encoder_fingerprint": "8f99cf67691c520841340d3d8a00054ae13d4dde9a521d1edda1c41f96788d7a",
+    "protocol": {
+      "split": "test",
+      "shots": 1,
+      "seed": 42,
+      "enrolled_classes": 100,
+      "background_classes": 100,
+      "known_cross_speaker_queries": 270,
+      "unknown_speaker_queries": 208,
+      "source_policy": "All enrollment/query/background source utterances are disjoint within this episode."
+    },
+    "scope": "Offline whole-utterance cosine matching; pair FAR is not continuous-listening false alarms/hour.",
+    "non_speech": {
+      "queries": 114,
+      "source_groups": 107,
+      "enrolled_templates": 100,
+      "threshold": 0.4419020712375641,
+      "threshold_source": "speech_validation",
+      "accept_rate": 0.5877192982456141,
+      "mean_max_cosine": 0.46278167633633865,
+      "p95_max_cosine": 0.6125155091285706,
+      "by_kind": {
+        "engine": {
+          "queries": 6,
+          "accept_rate": 0.5,
+          "mean_max_cosine": 0.45711014171441394
+        },
+        "pink_noise": {
+          "queries": 50,
+          "accept_rate": 0.6,
+          "mean_max_cosine": 0.457575199007988
+        },
+        "rain": {
+          "queries": 1,
+          "accept_rate": 0.0,
+          "mean_max_cosine": 0.40385401248931885
+        },
+        "silence": {
+          "queries": 10,
+          "accept_rate": 1.0,
+          "mean_max_cosine": 0.6125155031681061
+        },
+        "washing_machine": {
+          "queries": 7,
+          "accept_rate": 0.42857142857142855,
+          "mean_max_cosine": 0.4363357254437038
+        },
+        "white_noise": {
+          "queries": 40,
+          "accept_rate": 0.525,
+          "mean_max_cosine": 0.4388082794845104
+        }
+      },
+      "scope": "Held-out non-speech clips against speech templates; no RMS gate, no noise enrollment, not false alarms/hour",
+      "real_background": {
+        "queries": 14,
+        "source_groups": 7,
+        "accepted": 6,
+        "accept_rate": 0.42857142857142855
+      }
+    },
+    "snapshot_epoch": 16,
+    "training_dataset_fingerprint": "2d689e68075fa81f5c83add79650792619cc1e8e8c087ade9274d5667076a25a",
+    "test_trials_sha256": "2195a00e88985796a4d56afd906b91576d2d9a487ee37b0659091a5091a7fa17",
+    "evaluation_note": "Historical frozen 100-template test episode verified record-by-record; identical in-memory speech features for both models, v3 held-out non-speech, CPU FP32, no trimming/augmentation/energy gate; original checkpoint-specific validation thresholds. Different training background pools and architectures; not a single-factor ablation.",
+    "production_path_verification": "Representative frontend checks passed for all five speech sources"
+  },
+  "test_status": "Evaluated on the frozen test episode; v3 held-out background pool, unchanged speech records verified",
   "background_note": "The two nominal training ESC-50 clips and one validation clip were all zero. Effective real-background coverage was zero; original category-ID mapping was also incorrect.",
   "synthetic_reference": {
     "recipe": "32000 PCM16 samples: ((i % 97 - 48) * 256 + (i % 31 - 15) * 64), 16000 Hz",
